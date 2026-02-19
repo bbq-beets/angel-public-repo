@@ -1,4 +1,4 @@
-name: Test GITHUB_TOKEN PR with Issue Reference
+name: Test GITHUB_TOKEN PR with Issue Ref
 
 on:
   workflow_dispatch:
