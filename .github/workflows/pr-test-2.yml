@@ -55,6 +55,7 @@ jobs:
 
           ## Referenced Issue
           Related to #${ISSUE_NUMBER}
+          https://github.com/BombHillsNotCountries/james-actions-permissions-test/issues/1
 
           This references issue: https://github.com/${REPO}/issues/${ISSUE_NUMBER}
 
