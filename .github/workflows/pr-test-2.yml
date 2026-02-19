@@ -56,7 +56,8 @@ jobs:
           ## Referenced Issue
           Related to #${ISSUE_NUMBER}
           https://github.com/BombHillsNotCountries/james-actions-permissions-test/issues/1
-
+          https://github.com/inditex/mic-ivmtestcargorust/issues/8
+          
           This references issue: https://github.com/${REPO}/issues/${ISSUE_NUMBER}
 
           ## Keyword References (close/fix syntax)
