@@ -1,0 +1,112 @@
+name: Test GITHUB_TOKEN PR with Issue Reference
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to reference in the PR description"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  test-pr-with-issue-reference:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create a test branch with a change
+        run: |
+          BRANCH_NAME="test/authz-issue-ref-$(date +%s)"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+
+          git checkout -b "$BRANCH_NAME"
+
+          echo "Test change created at $(date -u)" > test-authz-change.txt
+
+          git add test-authz-change.txt
+          git commit -m "test: add file to verify GITHUB_TOKEN PR creation with issue ref"
+          git push origin "$BRANCH_NAME"
+
+      - name: Create pull request referencing the issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=${{ inputs.issue_number }}
+          REPO="${{ github.repository }}"
+
+          PR_TITLE="Test: GITHUB_TOKEN authz with issue reference #${ISSUE_NUMBER}"
+
+          PR_BODY=$(cat <<EOF
+          ## Purpose
+          This PR was created automatically to test the authorization behavior
+          of the \`GITHUB_TOKEN\` when a PR description references an issue.
+
+          ## Referenced Issue
+          Related to #${ISSUE_NUMBER}
+
+          This references issue: https://github.com/${REPO}/issues/${ISSUE_NUMBER}
+
+          ## Keyword References (close/fix syntax)
+          Closes #${ISSUE_NUMBER}
+
+          ---
+          _Created by GitHub Actions workflow run [#${{ github.run_number }}](${{ github.server_url }}/${REPO}/actions/runs/${{ github.run_id }})_
+          EOF
+          )
+
+          echo "::group::Creating pull request"
+          gh pr create \
+            --repo "$REPO" \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH_NAME" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" 2>&1 | tee /tmp/pr-create-output.txt
+          PR_CREATE_EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+
+          echo "## Result Summary" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$PR_CREATE_EXIT_CODE" -eq 0 ]; then
+            PR_URL=$(tail -1 /tmp/pr-create-output.txt)
+            echo "✅ PR created successfully: $PR_URL"
+            echo "✅ **PR created successfully**" >> "$GITHUB_STEP_SUMMARY"
+            echo "- PR URL: $PR_URL" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Referenced issue: #${ISSUE_NUMBER}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "❌ PR creation failed with exit code: $PR_CREATE_EXIT_CODE"
+            echo "❌ **PR creation failed** (exit code: $PR_CREATE_EXIT_CODE)" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/pr-create-output.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Verify issue reference was linked
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=${{ inputs.issue_number }}
+          REPO="${{ github.repository }}"
+
+          echo "::group::Fetching timeline events for issue #${ISSUE_NUMBER}"
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/issues/${ISSUE_NUMBER}/timeline" \
+            --jq '.[] | select(.event == "cross-referenced") | {event, source: .source.issue.pull_request.html_url}' 2>&1 || true
+          echo "::endgroup::"
+
+          echo "::group::Fetching issue details"
+          gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json title,state,body
+          echo "::endgroup::"
