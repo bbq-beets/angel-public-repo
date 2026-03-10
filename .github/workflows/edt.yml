@@ -1,4 +1,4 @@
-name: Try a Simple Action
+name: EDT
 
 on:
   schedule:
