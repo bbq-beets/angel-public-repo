@@ -1,0 +1,15 @@
+name: Try a Simple Action
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+      timezone: "America/New_York"
+    
+jobs:
+  say_hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Greet the user
+        uses: actions/hello-world-javascript-action@v1.1
+        with:
+          who-to-greet: "Sneha and Angel"
