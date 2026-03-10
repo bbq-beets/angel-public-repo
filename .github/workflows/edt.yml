@@ -2,7 +2,7 @@ name: EDT
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '0 19-20 * * *'
       timezone: "America/New_York"
       
   workflow_dispatch:
