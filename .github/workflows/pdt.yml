@@ -13,4 +13,4 @@ jobs:
       - name: Greet the user
         uses: actions/hello-world-javascript-action@v1.1
         with:
-          who-to-greet: "Sneha and Angel"
+          who-to-greet: "Angel"
