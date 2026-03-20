@@ -1,0 +1,16 @@
+name: PDT
+
+on:
+  schedule:
+    - cron: '0 19 * * *'
+      timezone: "America/Los_Angeles"
+      
+  workflow_dispatch:
+jobs:
+  say_hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Greet the user
+        uses: actions/hello-world-javascript-action@v1.1
+        with:
+          who-to-greet: "Angel"
