@@ -2,7 +2,7 @@ name: PDT
 
 on:
   schedule:
-    - cron: '0 19 * * *'
+    - cron: '0 9 * * *'
       timezone: "America/Los_Angeles"
       
   workflow_dispatch:
